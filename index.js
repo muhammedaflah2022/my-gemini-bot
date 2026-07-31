@@ -2,7 +2,8 @@ const {
     default: makeWASocket, 
     useMultiFileAuthState, 
     DisconnectReason, 
-    fetchLatestBaileysVersion 
+    fetchLatestBaileysVersion,
+    browsers
 } = require('@whiskeysockets/baileys');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pino = require('pino');
@@ -12,7 +13,7 @@ const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6LR963aSNzjkrBQ3tZ5Cw1eGP
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-// 2. WhatsApp Number (Country code സഹിതം)
+// 2. WhatsApp Number
 const PHONE_NUMBER = "919605046174";
 
 async function startBot() {
@@ -23,26 +24,29 @@ async function startBot() {
         version,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false,
-        auth: state
+        auth: state,
+        // macOS Chrome ആയി മാസ്‌ക് ചെയ്ത് ലോഗിൻ എറർ ഒഴിവാക്കുന്നു
+        browser: browsers.macOS('Desktop')
     });
 
-    // ലോഗിൻ ആയിട്ടില്ലെങ്കിൽ സ്വയം Pair Code ജനറേറ്റ് ചെയ്യും
+    // ലോഗിൻ ആയിട്ടില്ലെങ്കിൽ Pair Code ജനറേറ്റ് ചെയ്യും
     if (!sock.authState.creds.registered) {
         setTimeout(async () => {
             try {
-                const code = await sock.requestPairingCode(PHONE_NUMBER);
+                let code = await sock.requestPairingCode(PHONE_NUMBER);
+                code = code?.match(/.{1,4}/g)?.join("-") || code;
                 console.log(`\n====================================`);
-                console.log(`🔑 YOUR PAIRING CODE: ${code}`);
+                console.log(`🔑 NEW PAIRING CODE: ${code}`);
                 console.log(`====================================\n`);
             } catch (error) {
-                console.error("Pairing Code എറർ:", error);
+                console.error("Pairing Error:", error);
             }
-        }, 3000);
+        }, 5000);
     }
 
     sock.ev.on('creds.update', saveCreds);
 
-    // Connection Status
+    // Connection Events
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
