@@ -1,7 +1,4 @@
-FROM node:18-slim
-
-# Git ഇൻസ്റ്റാൾ ചെയ്യുന്നു
-RUN apt-get update && apt-get install -y git
+FROM node:18
 
 WORKDIR /app
 
@@ -10,5 +7,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+EXPOSE 8000
 
 CMD ["node", "index.js"]
