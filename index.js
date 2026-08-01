@@ -3,7 +3,7 @@ const {
     useMultiFileAuthState, 
     DisconnectReason, 
     fetchLatestBaileysVersion,
-    browsers
+    Browsers
 } = require('@whiskeysockets/baileys');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pino = require('pino');
@@ -19,18 +19,17 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 async function setupSession() {
     const sessionData = process.env.SESSION_ID;
     if (!sessionData) {
-        console.error("❌ SESSION_ID നൽകിയിട്ടില്ല! Koyeb-ലെ Environment Variables-ൽ SESSION_ID ചേർക്കുക.");
+        console.error("❌ SESSION_ID നൽകിയിട്ടില്ല! Environment Variables-ൽ SESSION_ID ചേർക്കുക.");
         return false;
     }
 
     const authDir = path.join(__dirname, 'auth_info');
     if (!fs.existsSync(authDir)) {
-        fs.mkdirSync(authDir);
+        fs.mkdirSync(authDir, { recursive: true });
     }
 
     try {
-        // Base64 അല്ലെങ്കിൽ JSON ഫോർമാറ്റിലുള്ള Session Decode ചെയ്യുന്നു
-        let cleanedSession = sessionData.replace(/^(ArslanMD~|SESSION~)/, ''); // Prefix ഉണ്ടെങ്കിൽ മാറ്റാൻ
+        let cleanedSession = sessionData.replace(/^(ArslanMD~|SESSION~)/, '');
         let decoded = Buffer.from(cleanedSession, 'base64').toString('utf-8');
         fs.writeFileSync(path.join(authDir, 'creds.json'), decoded);
         return true;
@@ -56,7 +55,7 @@ async function startBot() {
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false,
         auth: state,
-        browser: browsers.macOS('Desktop')
+        browser: Browsers.ubuntu('Chrome') // 👈 ഫിക്സ് ചെയ്തു (Capital 'B')
     });
 
     sock.ev.on('creds.update', saveCreds);
